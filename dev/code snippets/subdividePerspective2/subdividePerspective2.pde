@@ -9,10 +9,10 @@ void draw() {
   stroke(#f5f5f5);
 
   PVector[] points = new PVector[] {
-    new PVector(200, 350), 
-    new PVector(600, 50), 
+    new PVector(100, 250), 
+    new PVector(550, 50), 
     new PVector(600, 750), 
-    new PVector(200, 450)   
+    new PVector(100, 550)   
   };
 
   line(points[0].x, points[0].y, points[1].x, points[1].y);
@@ -20,7 +20,10 @@ void draw() {
   line(points[2].x, points[2].y, points[3].x, points[3].y);
   line(points[3].x, points[3].y, points[0].x, points[0].y);
 
-  subdividePerspecitive(points, 4);
+  line(points[0].x, points[0].y, points[2].x, points[2].y);
+  line(points[3].x, points[3].y, points[1].x, points[1].y);
+
+  subdividePerspecitive(points, 3);
 }
 
 import java.util.*;
@@ -32,7 +35,7 @@ void subdividePerspecitive(PVector[] points, int recursionSteps) {
     lerpsHorizontal, recursionSteps, 0.0, 1.0
     );
   Collections.sort(lerpsHorizontal);
-  
+
   ArrayList<Float> lerpsVertical = new ArrayList();
   getPerspectivicalSubdivisionLerps(
     new PVector[] {points[0], points[3]}, new PVector[] {points[1], points[2]}, 
@@ -82,16 +85,15 @@ void getPerspectivicalSubdivisionLerps(PVector[] line1, PVector[] line2, ArrayLi
   recursionSteps--;
 
   if (recursionSteps > 0) {
-   getPerspectivicalSubdivisionLerps(
+    getPerspectivicalSubdivisionLerps(
       new PVector[] {line1[0], PVector.lerp(line1[0], line1[1], lerp)}, new PVector[] {line2[0], PVector.lerp(line2[0], line2[1], lerp)}, 
       lerps, recursionSteps, low, map(lerp, 0.0, 1.0, low, high)
       );
-      
+
     getPerspectivicalSubdivisionLerps(
       new PVector[] { PVector.lerp(line1[0], line1[1], lerp), line1[1]}, new PVector[] {PVector.lerp(line2[0], line2[1], lerp), line2[1]}, 
       lerps, recursionSteps, map(lerp, 0.0, 1.0, low, high), high
       );
-      
   }
 }
 

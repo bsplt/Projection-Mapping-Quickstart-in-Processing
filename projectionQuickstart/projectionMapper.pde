@@ -1,3 +1,5 @@
+import java.util.*;
+
 public class Projection { 
   PVector[] planePoints;
   ArrayList<SmallQuad> smallQuads;
@@ -33,7 +35,7 @@ public class Projection {
         println("something went wrong");
       }
 
-      int resolution = 15;
+      int resolution = 1;
       refreshSmallQuads(resolution);
 
       float maxDistance = 0;
@@ -86,49 +88,151 @@ public class Projection {
   void refreshSmallQuads(int resolution) {
     smallQuads = new ArrayList();
 
-    for (int i = 0; i < resolution; i++) {
-      for (int j = 0; j < resolution; j++) {
-        PVector ab0 = getQuadHeightPoints(planePoints[0].x, planePoints[0].y, planePoints[1].x, planePoints[1].y, float(i), resolution);
-        PVector bc0 = getQuadHeightPoints(planePoints[1].x, planePoints[1].y, planePoints[2].x, planePoints[2].y, float(j), resolution); 
-        PVector cd0 = getQuadHeightPoints(planePoints[3].x, planePoints[3].y, planePoints[2].x, planePoints[2].y, float(i), resolution);
-        PVector da0 = getQuadHeightPoints(planePoints[0].x, planePoints[0].y, planePoints[3].x, planePoints[3].y, float(j), resolution);
-        PVector ab1 = getQuadHeightPoints(planePoints[0].x, planePoints[0].y, planePoints[1].x, planePoints[1].y, float(i + 1), resolution);
-        PVector bc1 = getQuadHeightPoints(planePoints[1].x, planePoints[1].y, planePoints[2].x, planePoints[2].y, float(j + 1), resolution); 
-        PVector cd1 = getQuadHeightPoints(planePoints[3].x, planePoints[3].y, planePoints[2].x, planePoints[2].y, float(i + 1), resolution);
-        PVector da1 = getQuadHeightPoints(planePoints[0].x, planePoints[0].y, planePoints[3].x, planePoints[3].y, float(j + 1), resolution);
+    ArrayList<ArrayList> lerps = subdividePerspecitive(planePoints, resolution);
 
-        PVector e = getHeightIntersection(ab0, cd0, da0, bc0);
-        PVector f = getHeightIntersection(ab1, cd1, da0, bc0);
-        PVector g = getHeightIntersection(ab1, cd1, da1, bc1);
-        PVector h = getHeightIntersection(ab0, cd0, da1, bc1);
+    Float[] horizontalLerps = new Float[lerps.get(0).size()];
+    horizontalLerps = (Float[]) lerps.get(0).toArray(horizontalLerps);
+    Float[] verticalLerps = new Float[lerps.get(1).size()];
+    verticalLerps = (Float[]) lerps.get(1).toArray(verticalLerps);
 
-        float uLow = (float) i / resolution;
-        float uHigh = (float) (i + 1) / resolution;
-        float vLow = (float) j / resolution;
-        float vHigh = (float) (j + 1) / resolution;
-
-        smallQuads.add(new SmallQuad(e, f, g, h, uLow, uHigh, vLow, vHigh));
+    for (int i = 0; i < horizontalLerps.length - 1; i++) {
+      for (int j = 0; j < verticalLerps.length - 1; j++) {
+        ArrayList<PVector> points = new ArrayList();
+        for (int k = 0; k < 2; k++) {
+          for (int l = 0; l < 2; l++) {
+            PVector point = getLineIntersection(new PVector[] {
+              PVector.lerp(planePoints[0], planePoints[1], horizontalLerps[i+k]), 
+              PVector.lerp(planePoints[3], planePoints[2], horizontalLerps[i+k]), 
+              PVector.lerp(planePoints[0], planePoints[3], verticalLerps[j+l]), 
+              PVector.lerp(planePoints[1], planePoints[2], verticalLerps[j+l])
+              });
+            points.add(point);
+          }
+        }
+        smallQuads.add(new SmallQuad(points.get(0), points.get(2), points.get(3), points.get(1), horizontalLerps[i], horizontalLerps[i+1], verticalLerps[j], verticalLerps[j+1]));
       }
     }
   }
 
-  PVector getQuadHeightPoints(float x0, float y0, float x1, float y1, float step, int resolution) {
-    return new PVector((x1 - x0) * (step / resolution) + x0, (y1 - y0) * (step / resolution) + y0);
+  ArrayList<ArrayList> subdividePerspecitive(PVector[] points, int recursionSteps) {
+    ArrayList<Float> lerpsHorizontal = new ArrayList();
+    getPerspectivicalSubdivisionLerps(
+      new PVector[] {points[0], points[1]}, new PVector[] {points[3], points[2]}, 
+      lerpsHorizontal, recursionSteps, 0.0, 1.0
+      );
+    lerpsHorizontal.add(0.0);
+    lerpsHorizontal.add(1.0);
+    Collections.sort(lerpsHorizontal);
+
+    ArrayList<Float> lerpsVertical = new ArrayList();
+    getPerspectivicalSubdivisionLerps(
+      new PVector[] {points[0], points[3]}, new PVector[] {points[1], points[2]}, 
+      lerpsVertical, recursionSteps, 0.0, 1.0
+      );
+    lerpsVertical.add(0.0);
+    lerpsVertical.add(1.0);
+    Collections.sort(lerpsVertical);
+
+    ArrayList<ArrayList> lerps = new ArrayList();
+    lerps.add(lerpsHorizontal);
+    lerps.add(lerpsVertical);
+
+    return lerps;
   }
 
-  PVector getHeightIntersection(PVector p1, PVector p2, PVector p3, PVector p4) {
-    PVector b = PVector.sub(p2, p1);
-    PVector d = PVector.sub(p4, p3);
-    float b_dot_d_perp = b.x * d.y - b.y * d.x;
-    PVector c = PVector.sub(p3, p1);
-    float t = (c.x * d.y - c.y * d.x) / b_dot_d_perp;
-    float u = (c.x * b.y - c.y * b.x) / b_dot_d_perp;
-    return new PVector(p1.x+t*b.x, p1.y+t*b.y);
+  void getPerspectivicalSubdivisionLerps(PVector[] line1, PVector[] line2, ArrayList<Float> lerps, int recursionSteps, float low, float high) {
+    PVector middle = getLineIntersection(
+      new PVector[] {
+      line1[0], line2[1], line2[0], line1[1] 
+      });
+
+    int steps = 15;
+    float lerp = 0.0;
+    float increment = 0.5;
+
+    for (int i = 0; i < steps; i++) {
+      if (
+        distanceFromLine(middle, 
+        PVector.lerp(line1[0], line1[1], lerp + increment), 
+        PVector.lerp(line2[0], line2[1], lerp + increment)) <
+        distanceFromLine(middle, 
+        PVector.lerp(line1[0], line1[1], lerp - increment), 
+        PVector.lerp(line2[0], line2[1], lerp - increment)))
+      {
+        lerp += increment;
+      } else {
+        lerp -= increment;
+      }
+      increment *= 0.5;
+    }
+
+    lerps.add(map(lerp, 0.0, 1.0, low, high));
+    recursionSteps--;
+
+    if (recursionSteps > 0) {
+      getPerspectivicalSubdivisionLerps(
+        new PVector[] {line1[0], PVector.lerp(line1[0], line1[1], lerp)}, new PVector[] {line2[0], PVector.lerp(line2[0], line2[1], lerp)}, 
+        lerps, recursionSteps, low, map(lerp, 0.0, 1.0, low, high)
+        );
+
+      getPerspectivicalSubdivisionLerps(
+        new PVector[] { PVector.lerp(line1[0], line1[1], lerp), line1[1]}, new PVector[] {PVector.lerp(line2[0], line2[1], lerp), line2[1]}, 
+        lerps, recursionSteps, map(lerp, 0.0, 1.0, low, high), high
+        );
+    }
+  }
+
+  PVector getLineIntersection(PVector[] lines) {
+    float x12 = lines[0].x - lines[1].x;
+    float x34 = lines[2].x - lines[3].x;
+    float y12 = lines[0].y - lines[1].y;
+    float y34 = lines[2].y - lines[3].y;
+
+    float c = x12 * y34 - y12 * x34;
+    float a = lines[0].x * lines[1].y - lines[0].y * lines[1].x;
+    float b = lines[2].x * lines[3].y - lines[2].y * lines[3].x;
+
+    float x = (a * x34 - b * x12) / c;
+    float y = (a * y34 - b * y12) / c;
+
+    return new PVector(x, y);
+  }
+
+  float distanceFromLine(PVector pos, PVector lineA, PVector lineB) {
+    float a = pos.x - lineA.x;
+    float b = pos.y - lineA.y;
+    float c = lineB.x - lineA.x;
+    float d = lineB.y - lineA.y;
+
+    float dot = a * c + b * d;
+    float lenSq = c * c + d * d;
+    float  param = -1;
+    if (lenSq != 0) //in case of 0 length line
+      param = dot / lenSq;
+
+    float xx, yy;
+
+    if (param < 0) {
+      xx = lineA.x;
+      yy = lineA.y;
+      ;
+    } else if (param > 1) {
+      xx = lineB.x;
+      yy = lineB.y;
+      ;
+    } else {
+      xx = lineA.x + param * c; 
+      yy = lineA.y + param * d;
+    }
+
+    float dx = pos.x - xx;
+    float dy = pos.y - yy;
+    return sqrt(dx * dx + dy * dy);
   }
 
   float getRatio(PVector[] planePoints)
-  // https://stackoverflow.com/questions/1194352/proportions-of-a-perspective-deformed-rectangle
-  // https://stackoverflow.com/questions/38285229/calculating-aspect-ratio-of-perspective-transform-destination-image
+    // https://stackoverflow.com/questions/1194352/proportions-of-a-perspective-deformed-rectangle
+    // https://stackoverflow.com/questions/38285229/calculating-aspect-ratio-of-perspective-transform-destination-image
   {
     PVector principalPoint = new PVector(width * 0.5, height * 0.5);
 
@@ -313,6 +417,8 @@ public class ProjectionManager {
       strokeWeight(1);
 
       for (Projection projection : projections) {
+        line(projection.planePoints[0].x, projection.planePoints[0].y, projection.planePoints[2].x, projection.planePoints[2].y);
+        line(projection.planePoints[1].x, projection.planePoints[1].y, projection.planePoints[3].x, projection.planePoints[3].y);
         beginShape(QUAD);
         for (PVector corner : projection.planePoints) {
           vertex(corner.x, corner.y);
