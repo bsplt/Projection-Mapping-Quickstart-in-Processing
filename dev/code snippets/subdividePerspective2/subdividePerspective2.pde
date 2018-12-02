@@ -15,11 +15,6 @@ void draw() {
     new PVector(100, 550)   
   };
 
-  line(points[0].x, points[0].y, points[1].x, points[1].y);
-  line(points[1].x, points[1].y, points[2].x, points[2].y);
-  line(points[2].x, points[2].y, points[3].x, points[3].y);
-  line(points[3].x, points[3].y, points[0].x, points[0].y);
-
   line(points[0].x, points[0].y, points[2].x, points[2].y);
   line(points[3].x, points[3].y, points[1].x, points[1].y);
 
@@ -34,6 +29,8 @@ void subdividePerspecitive(PVector[] points, int recursionSteps) {
     new PVector[] {points[0], points[1]}, new PVector[] {points[3], points[2]}, 
     lerpsHorizontal, recursionSteps, 0.0, 1.0
     );
+  lerpsHorizontal.add(0.0);
+  lerpsHorizontal.add(1.0);
   Collections.sort(lerpsHorizontal);
 
   ArrayList<Float> lerpsVertical = new ArrayList();
@@ -41,7 +38,11 @@ void subdividePerspecitive(PVector[] points, int recursionSteps) {
     new PVector[] {points[0], points[3]}, new PVector[] {points[1], points[2]}, 
     lerpsVertical, recursionSteps, 0.0, 1.0
     );
+  lerpsVertical.add(0.0);
+  lerpsVertical.add(1.0);
   Collections.sort(lerpsVertical);
+
+  println(lerpsHorizontal);
 
   for (float lerp : lerpsHorizontal) {
     PVector A = PVector.lerp(points[0], points[1], lerp);
@@ -53,6 +54,32 @@ void subdividePerspecitive(PVector[] points, int recursionSteps) {
     PVector B = PVector.lerp(points[1], points[2], lerp);
     line(A.x, A.y, B.x, B.y);
   }
+
+  // -----------
+
+  ArrayList<PVector> newPoints = new ArrayList();
+  for (int i = 0; i < lerpsHorizontal.size() - 1; i++) {
+    for (int j = 0; j < lerpsVertical.size() - 1; j++) {
+
+      for (int k = 0; k < 2; k++) {
+        for (int l = 0; l < 2; l++) {
+          PVector point = getLineIntersection(new PVector[] {
+            PVector.lerp(points[0], points[1], lerpsHorizontal.get(i+k)), 
+            PVector.lerp(points[3], points[2], lerpsHorizontal.get(i+k)), 
+            PVector.lerp(points[0], points[3], lerpsVertical.get(j+l)), 
+            PVector.lerp(points[1], points[2], lerpsVertical.get(j+l))
+            });
+          newPoints.add(point);
+        }
+      }
+    }
+  }
+  
+  for (PVector point : newPoints) {
+   ellipse(point.x, point.y, 10, 10); 
+  }
+
+  // -----------
 }
 
 void getPerspectivicalSubdivisionLerps(PVector[] line1, PVector[] line2, ArrayList<Float> lerps, int recursionSteps, float low, float high) {

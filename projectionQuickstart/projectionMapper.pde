@@ -1,27 +1,43 @@
 import java.util.*;
 
-public class Projection { 
+public abstract class Projection { 
   PVector[] planePoints;
   ArrayList<SmallQuad> smallQuads;
-  int[] size;
   PGraphics plane;
   boolean sizeChanged;
+  String id;
 
   public Projection() {
-    sizeChanged = true;
     projectionManager.addProjection(this);
-    smallQuads = new ArrayList();
+    projectionManager.loadCalibration();
+    init();
+  }
 
-    size = new int[] {
-      500, 500
-    };
+  private void init() {
+    smallQuads = new ArrayList();
+    id = "";
+    sizeChanged = true;
+    PApplet p = projectionManager.parent;
 
     planePoints = new PVector[] {
-      new PVector(width * 0.3333, height * 0.3333), 
-      new PVector(width * 0.6666, height * 0.3333), 
-      new PVector(width * 0.6666, height * 0.6666), 
-      new PVector(width * 0.3333, height * 0.6666)
+      new PVector(p.width * 0.3333, p.height * 0.3333), 
+      new PVector(p.width * 0.6666, p.height * 0.3333), 
+      new PVector(p.width * 0.6666, p.height * 0.6666), 
+      new PVector(p.width * 0.3333, p.height * 0.6666)
     };
+  }
+
+  // --
+
+  public void calibrate(String id) {
+    this.id = id;
+    PVector[] calibration = projectionManager.getCalibration(id);
+    if (calibration == null) {
+      return;
+    }
+    for (int i = 0; i < 4; i++) {
+      planePoints[i] = calibration[i];
+    }
   }
 
   public void projectionResize() {
@@ -35,7 +51,7 @@ public class Projection {
         println("something went wrong");
       }
 
-      int resolution = 1;
+      int resolution = 5;
       refreshSmallQuads(resolution);
 
       float maxDistance = 0;
@@ -48,12 +64,12 @@ public class Projection {
       ratio = max(ratio, 0.1);
       ratio = min(ratio, 10.0);
 
-      size = new int[] {
-        round(ratio > 1.0 ? maxDistance * ratio : maxDistance), 
-        round(ratio > 1.0 ? maxDistance : maxDistance / ratio)
-      };
+      width = round(ratio > 1.0 ? maxDistance * ratio : maxDistance); 
+      height = round(ratio > 1.0 ? maxDistance : maxDistance / ratio);
+      plane = createGraphics(width, height);
+      setup();
 
-      plane = createGraphics(size[0], size[1]);
+      println("Changed projection to a ratio of 1:" + ratio + " and dimensions of " + width + " by " + height + ".");
 
       sizeChanged = false;
     }
@@ -62,7 +78,6 @@ public class Projection {
   public void setReady() {
     projectionResize();
     plane.beginDraw();
-    plane.clear();
     plane.noFill();
     plane.stroke(#FFFFFF);
   }
@@ -85,31 +100,39 @@ public class Projection {
     endShape();
   }
 
+  // ---
+
   void refreshSmallQuads(int resolution) {
     smallQuads = new ArrayList();
 
     ArrayList<ArrayList> lerps = subdividePerspecitive(planePoints, resolution);
 
-    Float[] horizontalLerps = new Float[lerps.get(0).size()];
-    horizontalLerps = (Float[]) lerps.get(0).toArray(horizontalLerps);
-    Float[] verticalLerps = new Float[lerps.get(1).size()];
-    verticalLerps = (Float[]) lerps.get(1).toArray(verticalLerps);
+    Float[] lerpsHorizontal = new Float[lerps.get(0).size()];
+    lerpsHorizontal = (Float[]) lerps.get(0).toArray(lerpsHorizontal);
+    Float[] lerpsVertical = new Float[lerps.get(1).size()];
+    lerpsVertical = (Float[]) lerps.get(1).toArray(lerpsVertical);
 
-    for (int i = 0; i < horizontalLerps.length - 1; i++) {
-      for (int j = 0; j < verticalLerps.length - 1; j++) {
+    for (int i = 0; i < lerpsHorizontal.length - 1; i++) {
+      for (int j = 0; j < lerpsVertical.length - 1; j++) {
         ArrayList<PVector> points = new ArrayList();
         for (int k = 0; k < 2; k++) {
           for (int l = 0; l < 2; l++) {
             PVector point = getLineIntersection(new PVector[] {
-              PVector.lerp(planePoints[0], planePoints[1], horizontalLerps[i+k]), 
-              PVector.lerp(planePoints[3], planePoints[2], horizontalLerps[i+k]), 
-              PVector.lerp(planePoints[0], planePoints[3], verticalLerps[j+l]), 
-              PVector.lerp(planePoints[1], planePoints[2], verticalLerps[j+l])
+              PVector.lerp(planePoints[0], planePoints[1], lerpsHorizontal[i+k]), 
+              PVector.lerp(planePoints[3], planePoints[2], lerpsHorizontal[i+k]), 
+              PVector.lerp(planePoints[0], planePoints[3], lerpsVertical[j+l]), 
+              PVector.lerp(planePoints[1], planePoints[2], lerpsVertical[j+l])
               });
             points.add(point);
           }
         }
-        smallQuads.add(new SmallQuad(points.get(0), points.get(2), points.get(3), points.get(1), horizontalLerps[i], horizontalLerps[i+1], verticalLerps[j], verticalLerps[j+1]));
+
+        float uLow = (float) i / (lerpsHorizontal.length-1);
+        float uHigh = (float) (i + 1) / (lerpsHorizontal.length-1);
+        float vLow = (float) j / (lerpsVertical.length-1);
+        float vHigh = (float) (j + 1) / (lerpsVertical.length-1);
+
+        smallQuads.add(new SmallQuad(points.get(0), points.get(2), points.get(3), points.get(1), uLow, uHigh, vLow, vHigh));
       }
     }
   }
@@ -215,11 +238,9 @@ public class Projection {
     if (param < 0) {
       xx = lineA.x;
       yy = lineA.y;
-      ;
     } else if (param > 1) {
       xx = lineB.x;
       yy = lineB.y;
-      ;
     } else {
       xx = lineA.x + param * c; 
       yy = lineA.y + param * d;
@@ -234,7 +255,8 @@ public class Projection {
     // https://stackoverflow.com/questions/1194352/proportions-of-a-perspective-deformed-rectangle
     // https://stackoverflow.com/questions/38285229/calculating-aspect-ratio-of-perspective-transform-destination-image
   {
-    PVector principalPoint = new PVector(width * 0.5, height * 0.5);
+    PApplet p = projectionManager.parent;
+    PVector principalPoint = new PVector(p.width * 0.5, p.height * 0.5);
 
     float m1x = planePoints[3].x - principalPoint.x;
     float m1y = planePoints[3].y - principalPoint.y;
@@ -270,8 +292,9 @@ public class Projection {
   }
 
 
-
   // ---
+
+  int width, height;
 
   public void setup() {
   }
@@ -286,20 +309,20 @@ public class Projection {
     plane.background(col);
   }
 
+  public void clear() {
+    plane.clear();
+  }
+
   public void line(float a, float b, float c, float d) {
-    plane.line(a * size[0], b * size[1], c * size[0], d * size[1]);
+    plane.line(a, b, c, d);
   }
 
   public void rect(float a, float b, float c, float d) {
-    plane.rect(a * size[0], b * size[1], c * size[0], d * size[1]);
+    plane.rect(a, b, c, d);
   }
 
   public void ellipse(float a, float b, float c, float d) {
-    plane.ellipse(a * size[0], b * size[1], c * size[0], d * size[1]);
-  }
-
-  public void ellipse(float a, float b, float c) {
-    plane.ellipse(a * size[0], b * size[1], c * min(size[0], size[1]), c * min(size[0], size[1]));
+    plane.ellipse(a, b, c, d);
   }
 
   public void noStroke() {
@@ -320,6 +343,14 @@ public class Projection {
 
   public void strokeWeight(int thickness) {
     plane.strokeWeight(thickness);
+  }
+
+  public void rectMode(int mode) {
+    plane.rectMode(mode);
+  }
+
+  public void ellipseMode(int mode) {
+    plane.ellipseMode(mode);
   }
 }
 
@@ -350,20 +381,31 @@ public class ProjectionManager {
   private PVector calibrationPoint, mouseClickPoint, mouseClickOffset;
   private Projection changedProjection;
 
-  public ProjectionManager(PApplet parent) {
-    parent.registerMethod("draw", this);
-    projections = new ArrayList();
+  public PApplet parent;
+  private Table calibrationData;
+  public boolean hasLoadedCalibrationData; 
 
+  public ProjectionManager(PApplet parent) {
+    this.parent = parent;
+    parent.registerMethod("draw", this);
+    parent.registerMethod("pre", this);
+
+    projections = new ArrayList();
     lastMouseCheck = millis();
     lastMouseActive = millis();
     mouseTravel = 0;
     calibrating = false;
     pmousePressed = false;
     changedSomething = false;
+    hasLoadedCalibrationData = false;
   }
 
   public void addProjection(Projection projection) {
     projections.add(projection);
+  }
+
+  public void pre() {
+    clear();
   }
 
   public void draw() {
@@ -372,7 +414,6 @@ public class ProjectionManager {
   }
 
   private void showProjections() {
-    //clear();
     noStroke();
 
     for (Projection projection : projections) {
@@ -417,8 +458,6 @@ public class ProjectionManager {
       strokeWeight(1);
 
       for (Projection projection : projections) {
-        line(projection.planePoints[0].x, projection.planePoints[0].y, projection.planePoints[2].x, projection.planePoints[2].y);
-        line(projection.planePoints[1].x, projection.planePoints[1].y, projection.planePoints[3].x, projection.planePoints[3].y);
         beginShape(QUAD);
         for (PVector corner : projection.planePoints) {
           vertex(corner.x, corner.y);
@@ -427,8 +466,6 @@ public class ProjectionManager {
 
         for (PVector corner : projection.planePoints) {
           ellipse(corner.x, corner.y, size * 2, size * 2);
-          line(corner.x - size, corner.y, corner.x + size, corner.y);
-          line(corner.x, corner.y - size, corner.x, corner.y + size);
         }
       }
 
@@ -468,9 +505,73 @@ public class ProjectionManager {
         calibrationPoint = null;
         if (changedSomething) {
           changedProjection.sizeChanged = true;
+          saveCalibration(changedProjection);
         }
       }
     }
+  }
+
+  public PVector[] getCalibration(String id) {
+    if (!hasLoadedCalibrationData) {
+      loadCalibration();
+    }
+
+    TableRow current = calibrationData.findRow(id, 0);
+    if (current == null) {
+      return null;
+    }
+
+    PVector[] points = new PVector[] {
+      new PVector(current.getFloat("ax"), current.getFloat("ay")), 
+      new PVector(current.getFloat("bx"), current.getFloat("by")), 
+      new PVector(current.getFloat("cx"), current.getFloat("cy")), 
+      new PVector(current.getFloat("dx"), current.getFloat("dy")), 
+    };
+
+    return points;
+  }
+
+  private void loadCalibration() {
+    calibrationData = null;
+    try {
+      calibrationData = loadTable("data/calibration.csv", "header");
+    } 
+    catch (Exception e) {
+    }
+
+    if (calibrationData == null) {
+      println("The sketch is not calibrated yet. The calibration will be saved automatically.");
+      calibrationData = new Table();
+      calibrationData.addColumn("ID", Table.STRING);
+      calibrationData.addColumn("ax", Table.FLOAT);
+      calibrationData.addColumn("ay", Table.FLOAT);
+      calibrationData.addColumn("bx", Table.FLOAT);
+      calibrationData.addColumn("by", Table.FLOAT);
+      calibrationData.addColumn("cx", Table.FLOAT);
+      calibrationData.addColumn("cy", Table.FLOAT);
+      calibrationData.addColumn("dx", Table.FLOAT);
+      calibrationData.addColumn("dy", Table.FLOAT);
+    }
+
+    hasLoadedCalibrationData = true;
+  }
+
+  private void saveCalibration(Projection projection) {
+    TableRow current = calibrationData.findRow(projection.id, 0);
+    if (current == null) {
+      current = calibrationData.addRow();
+      current.setString("ID", projection.id);
+    }
+    current.setFloat("ax", projection.planePoints[0].x);
+    current.setFloat("ay", projection.planePoints[0].y);
+    current.setFloat("bx", projection.planePoints[1].x);
+    current.setFloat("by", projection.planePoints[1].y);
+    current.setFloat("cx", projection.planePoints[2].x);
+    current.setFloat("cy", projection.planePoints[2].y);
+    current.setFloat("dx", projection.planePoints[3].x);
+    current.setFloat("dy", projection.planePoints[3].y);
+
+    saveTable(calibrationData, "data/calibration.csv");
   }
 }
 

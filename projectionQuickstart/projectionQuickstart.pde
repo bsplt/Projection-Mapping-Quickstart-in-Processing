@@ -2,7 +2,10 @@ PImage img;
 
 void setup() {
   size(800, 800, P2D);
-  new Test();
+  new Test().calibrate("1");
+  new Test().calibrate("2");
+  new Test().calibrate("3");
+  
   img = loadImage("test-bg2.jpg");
 }
 
@@ -11,14 +14,37 @@ void draw() {
 }
 
 class Test extends Projection {
-  void draw() {
-    //background(#212121);
-    line(0, 0, 1, 1);
-    line(0, 1, 1, 0);
-    //float x = map(frameCount % 120, 0, 120, 0, 1);
-    //line(x, 0, x, 1);
-    //line(0, 0.5, 1, 0.5);
+  PVector ball, velocity;
+  float radius;
 
-    ellipse(0.5, 0.2, 0.2);
+  void setup() {
+    ball = new PVector();
+    radius = min(width, height) * 0.1;
+    velocity = PVector.random2D().mult(radius * 0.1);
+  }
+
+  void draw() {
+    clear();
+    ball.add(velocity);
+    if (ball.x < radius) {
+      ball.x = radius;
+      velocity.x *= -1;
+    }
+    if (ball.y < radius) {
+      ball.y = radius;
+      velocity.y *= -1;
+    }
+    if (ball.x > width - radius) {
+      ball.x = width - radius;
+      velocity.x *= -1;
+    }
+    if (ball.y > height - radius) {
+      ball.y = height - radius;
+      velocity.y *= -1;
+    }
+    strokeWeight(2);
+    ellipseMode(RADIUS);
+    fill(#FF0000);
+    ellipse(ball.x, ball.y, radius, radius);
   }
 }
