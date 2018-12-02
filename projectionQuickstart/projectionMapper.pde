@@ -1,3 +1,55 @@
+/*
+ *        ___         ___  
+ *       /  /\       /__/\    
+ *      /  /::\     |  |::\   
+ *     /  /:/\:\    |  |:|:\  
+ *    /  /:/-/:/  __|__|:|\:\ 
+ *   /__/:/ /:/  /__/::::| \:\
+ *   \  \:\/:/   \  \:\--\__\/
+ *    \  \::/     \  \:\      
+ *     \  \:\      \  \:\     
+ *      \  \:\      \  \:\    
+ *       \__\/       \__\/ 
+ *
+ *    Projection Mapper
+ *
+ *    by Alexander Lehmann
+ *    github.com/bsplt
+ *
+ *    Send me your requests on github.
+ *
+ *
+ * About:
+ *   This file is a tool for creating projection mappings in Processing instantaneously.
+ *   You can (almost) copy past your existing Processing code to a projection map. Easy!
+ *   It will provide you with all the necessary features for projection mapping on rectangles.
+ *
+ * Instructions:
+ * - Drop this file "projectionMapper.pde" into your sketch folder.
+ * - Extend the Projection class like this:
+ *   class Example extends Projection { ... }
+ * - Inside the scope of this class you can write like a regular Processing sketch.
+ *   You use setup() to initialize variables and draw() like you would normally.
+ *   Drawing attributes (e.g. strokeWeight() or fill()) cannot be inside setup().
+ *   They have to be inside draw().
+ * - You can of course declare varibales globally (inside the scope)
+ *   if you want to access them longer then one draw loop.
+ * - Initialize your projections like this in your regular setup function:
+ *   new Example().calibrate("1");
+ *   You don't need to assign it to a variable.
+ *   Using the calibrate("..") function saves your modifications
+ *   to the projection transformation between runs of the sketch.
+ *   The String inside the function (e.g. "1") has to be a unique id for
+ *   loading the transformation in the next run of the sketch.
+ * - When you move the mouse you enter calibration mode.
+ *   Drag the corners to the desired position in the projection.
+ *   The transformation will be saved automatically.
+ * - The calibration file is saved as a CSV in the data folder of the sketch.
+ * - Be aware that the width and height values (of your projection) change depeneding
+ *   on the transformation so write your code accordingly (ie. adpatively).
+ */
+
+
 import java.util.*;
 
 public abstract class Projection { 
@@ -15,7 +67,7 @@ public abstract class Projection {
 
   private void init() {
     smallQuads = new ArrayList();
-    id = "";
+    id = "unnamed";
     sizeChanged = true;
     PApplet p = projectionManager.parent;
 
@@ -27,7 +79,7 @@ public abstract class Projection {
     };
   }
 
-  // --
+  // ---
 
   public void calibrate(String id) {
     this.id = id;
@@ -69,7 +121,7 @@ public abstract class Projection {
       plane = createGraphics(width, height);
       setup();
 
-      println("Changed projection to a ratio of 1:" + ratio + " and dimensions of " + width + " by " + height + ".");
+      println("Set projection \"" + id + "\" to a ratio of 1:" + ratio + " with the dimensions of " + width + " by " + height + ".");
 
       sizeChanged = false;
     }
@@ -291,18 +343,79 @@ public abstract class Projection {
     return whRatio;
   }
 
-
   // ---
+  
+  /* TODO:
+  save
+  saveFrame
+  
+  
+  
+  applyMatrix
+  popMatrix
+  printMatrix
+  pushMatrix
+  resetMatrix
+  rotate
+  scale
+  shearX
+  shearY
+  translate
+  
+  arc
+  point
+  quad
+  triangle
+  
+  shape
+  image
+  imageMode
+  tint
+  
+  bezier
+  bezierDetail
+  curve
+  curveDetail
+  curveTightness
+  
+  beginContour
+  beginShape
+  bezierVertex
+  curveVertex
+  endContour
+  endShape
+  quadraticVertex
+  vertex
+  texture
+  textureMode
+  textureWrap
+  
+  clip
+  
+  text
+  textFont
+  textAlign
+  textLeading
+  textMode
+  textSize
+  textWidth
+  textAscent
+  textDescent
+  
+  */
 
   int width, height;
 
   public void setup() {
+    // Override this!
   }
 
   public void draw() {
+    // Override this!
   }
 
   public void size() {
+    println("Size is set automatically. Don't use size().");
   }
 
   public void background(color col) {
@@ -325,6 +438,10 @@ public abstract class Projection {
     plane.ellipse(a, b, c, d);
   }
 
+  public void colorMode(int mode) {
+    plane.colorMode(mode);
+  }
+
   public void noStroke() {
     plane.noStroke();
   }
@@ -345,12 +462,24 @@ public abstract class Projection {
     plane.strokeWeight(thickness);
   }
 
+  public void strokeJoin(int mode) {
+    plane.strokeJoin(mode);
+  }
+
+  public void strokeCap(int mode) {
+    plane.strokeCap(mode);
+  }
+
   public void rectMode(int mode) {
     plane.rectMode(mode);
   }
 
   public void ellipseMode(int mode) {
     plane.ellipseMode(mode);
+  }
+
+  public void blendMode(int mode) {
+    plane.blendMode(mode);
   }
 }
 

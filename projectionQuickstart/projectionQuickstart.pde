@@ -44,7 +44,6 @@ class Test extends Projection {
     }
     strokeWeight(2);
     ellipseMode(RADIUS);
-    fill(#FF0000);
     ellipse(ball.x, ball.y, radius, radius);
   }
 }
