@@ -56,7 +56,7 @@ public abstract class Projection {
   PVector[] planePoints;
   ArrayList<SmallQuad> smallQuads;
   PGraphics plane;
-  boolean sizeChanged;
+  boolean sizeChanged, hasSetup;
   String id;
 
   public Projection() {
@@ -92,6 +92,13 @@ public abstract class Projection {
     }
   }
 
+  public void setupOnce() {
+    if (!hasSetup) {
+      setup();
+      hasSetup = true;
+    }
+  }
+
   public void projectionResize() {
     if (sizeChanged) {
       float ratio = 1.0;
@@ -119,11 +126,11 @@ public abstract class Projection {
       width = round(ratio > 1.0 ? maxDistance * ratio : maxDistance); 
       height = round(ratio > 1.0 ? maxDistance : maxDistance / ratio);
       plane = createGraphics(width, height);
-      setup();
 
       println("Set projection \"" + id + "\" to a ratio of 1:" + ratio + " with the dimensions of " + width + " by " + height + ".");
 
       sizeChanged = false;
+      hasSetup = false;
     }
   }
 
@@ -344,7 +351,7 @@ public abstract class Projection {
   }
 
   // ---
-  
+
   /* TODO:
   save
   saveFrame
@@ -403,6 +410,63 @@ public abstract class Projection {
   textDescent
   
   */
+   save
+   saveFrame
+   
+   
+   
+   applyMatrix
+   popMatrix
+   printMatrix
+   pushMatrix
+   resetMatrix
+   rotate
+   scale
+   shearX
+   shearY
+   translate
+   
+   arc
+   point
+   quad
+   triangle
+   
+   shape
+   image
+   imageMode
+   tint
+   
+   bezier
+   bezierDetail
+   curve
+   curveDetail
+   curveTightness
+   
+   beginContour
+   beginShape
+   bezierVertex
+   curveVertex
+   endContour
+   endShape
+   quadraticVertex
+   vertex
+   texture
+   textureMode
+   textureWrap
+   
+   clip
+   
+   text
+   textFont
+   textAlign
+   textLeading
+   textMode
+   textSize
+   textWidth
+   textAscent
+   textDescent
+   
+   */
 
   int width, height;
 
@@ -414,8 +478,13 @@ public abstract class Projection {
     // Override this!
   }
 
-  public void size() {
-    println("Size is set automatically. Don't use size().");
+  public void size(int width, int height) {
+    plane.endDraw();
+    plane = createGraphics(width, height);
+    plane.beginDraw();
+    println("Dimensions changed manually to " + width + " by " + height + ".");
+    this.width = width;
+    this.height = height;
   }
 
   public void background(color col) {
@@ -547,6 +616,7 @@ public class ProjectionManager {
 
     for (Projection projection : projections) {
       projection.setReady();
+      projection.setupOnce();
       projection.draw();
       projection.setFinished();
       projection.applyProjection();
