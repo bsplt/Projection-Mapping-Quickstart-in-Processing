@@ -5,7 +5,7 @@ void setup() {
   new Test().calibrate("1");
   new Test().calibrate("2");
   new Test().calibrate("3");
-  
+
   img = loadImage("test-bg2.jpg");
 }
 
@@ -44,6 +44,8 @@ class Test extends Projection {
     }
     strokeWeight(2);
     ellipseMode(RADIUS);
+    noFill();
+    stroke(#FFFFFF);
     ellipse(ball.x, ball.y, radius, radius);
   }
 }

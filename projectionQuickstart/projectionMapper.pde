@@ -30,8 +30,6 @@
  *   class Example extends Projection { ... }
  * - Inside the scope of this class you can write like a regular Processing sketch.
  *   You use setup() to initialize variables and draw() like you would normally.
- *   Drawing attributes (e.g. strokeWeight() or fill()) cannot be inside setup().
- *   They have to be inside draw().
  * - You can of course declare varibales globally (inside the scope)
  *   if you want to access them longer then one draw loop.
  * - Initialize your projections like this in your regular setup function:
@@ -47,15 +45,15 @@
  * - The calibration file is saved as a CSV in the data folder of the sketch.
  * - Be aware that the width and height values (of your projection) change depeneding
  *   on the transformation so write your code accordingly (ie. adpatively).
+ *   If you don't want it to change, use the size() command with fixed values.
  */
 
 
 import java.util.*;
 
-public abstract class Projection { 
+public abstract class Projection extends ProcessingFunctionality { 
   PVector[] planePoints;
   ArrayList<SmallQuad> smallQuads;
-  PGraphics plane;
   boolean sizeChanged, hasSetup;
   String id;
 
@@ -96,6 +94,8 @@ public abstract class Projection {
     if (!hasSetup) {
       setup();
       hasSetup = true;
+      plane.noFill();
+      plane.stroke(#FFFFFF);
     }
   }
 
@@ -137,8 +137,6 @@ public abstract class Projection {
   public void setReady() {
     projectionResize();
     plane.beginDraw();
-    plane.noFill();
-    plane.stroke(#FFFFFF);
   }
 
   public void setFinished() {
@@ -349,88 +347,13 @@ public abstract class Projection {
 
     return whRatio;
   }
+}
+
+abstract class ProcessingFunctionality {
 
   // ---
 
   /* TODO:
-  save
-  saveFrame
-  
-  
-  
-  applyMatrix
-  popMatrix
-  printMatrix
-  pushMatrix
-  resetMatrix
-  rotate
-  scale
-  shearX
-  shearY
-  translate
-  
-  arc
-  point
-  quad
-  triangle
-  
-  shape
-  image
-  imageMode
-  tint
-  
-  bezier
-  bezierDetail
-  curve
-  curveDetail
-  curveTightness
-  
-  beginContour
-  beginShape
-  bezierVertex
-  curveVertex
-  endContour
-  endShape
-  quadraticVertex
-  vertex
-  texture
-  textureMode
-  textureWrap
-  
-  clip
-  
-  text
-  textFont
-  textAlign
-  textLeading
-  textMode
-  textSize
-  textWidth
-  textAscent
-  textDescent
-  
-  */
-   save
-   saveFrame
-   
-   
-   
-   applyMatrix
-   popMatrix
-   printMatrix
-   pushMatrix
-   resetMatrix
-   rotate
-   scale
-   shearX
-   shearY
-   translate
-   
-   arc
-   point
-   quad
-   triangle
-   
    shape
    image
    imageMode
@@ -451,34 +374,26 @@ public abstract class Projection {
    quadraticVertex
    vertex
    texture
-   textureMode
+   textureMode 
    textureWrap
    
    clip
    
-   text
-   textFont
-   textAlign
-   textLeading
-   textMode
-   textSize
-   textWidth
-   textAscent
-   textDescent
-   
    */
 
-  int width, height;
+  public PGraphics plane;
 
-  public void setup() {
+  protected int width, height;
+
+  protected void setup() {
     // Override this!
   }
 
-  public void draw() {
+  protected void draw() {
     // Override this!
   }
 
-  public void size(int width, int height) {
+  protected void size(int width, int height) {
     plane.endDraw();
     plane = createGraphics(width, height);
     plane.beginDraw();
@@ -487,79 +402,168 @@ public abstract class Projection {
     this.height = height;
   }
 
-  public void background(color col) {
+  protected void background(color col) {
     plane.background(col);
   }
 
-  public void clear() {
+  protected void clear() {
     plane.clear();
   }
 
-  public void line(float a, float b, float c, float d) {
+  protected void save(String name) {
+    plane.save(name);
+  }
+
+  protected void saveFrame() {
+    String name = nf(frameCount, 4) + ".tif";
+    save(name);
+  }
+
+  protected void saveFrame(String name) {
+    name = projectionManager.parent.insertFrame(name);
+    plane.save(name);
+  }
+
+  protected void line(float a, float b, float c, float d) {
     plane.line(a, b, c, d);
   }
 
-  public void rect(float a, float b, float c, float d) {
+  protected void rect(float a, float b, float c, float d) {
     plane.rect(a, b, c, d);
   }
 
-  public void ellipse(float a, float b, float c, float d) {
+  protected void ellipse(float a, float b, float c, float d) {
     plane.ellipse(a, b, c, d);
   }
 
-  public void colorMode(int mode) {
+  protected void arc(float a, float b, float c, float d, float start, float stop) {
+    plane.arc(a, b, c, d, start, stop);
+  }
+
+  protected void arc(float a, float b, float c, float d, float start, float stop, int mode) {
+    plane.arc(a, b, c, d, start, stop, mode);
+  }
+
+  protected void point(float x, float y) {
+    plane.point(x, y);
+  }
+
+  protected void quad(float a, float b, float c, float d, float e, float f, float g, float h) {
+    plane.quad(a, b, c, d, e, f, g, h);
+  }
+
+  protected void triangle(float a, float b, float c, float d, float e, float f) {
+    plane.triangle(a, b, c, d, e, f);
+  }
+
+  protected void colorMode(int mode) {
     plane.colorMode(mode);
   }
 
-  public void noStroke() {
+   void noStroke() {
     plane.noStroke();
   }
 
-  public void noFill() {
+  protected void noFill() {
     plane.noFill();
   }
 
-  public void fill(color col) {
+  protected void fill(color col) {
     plane.fill(col);
   }
 
-  public void stroke(color col) {
+  protected void stroke(color col) {
     plane.stroke(col);
   }
 
-  public void strokeWeight(int thickness) {
+  protected void strokeWeight(int thickness) {
     plane.strokeWeight(thickness);
   }
 
-  public void strokeJoin(int mode) {
+  protected void strokeJoin(int mode) {
     plane.strokeJoin(mode);
   }
 
-  public void strokeCap(int mode) {
+  protected void strokeCap(int mode) {
     plane.strokeCap(mode);
   }
 
-  public void rectMode(int mode) {
+  protected void rectMode(int mode) {
     plane.rectMode(mode);
   }
 
-  public void ellipseMode(int mode) {
+  protected void ellipseMode(int mode) {
     plane.ellipseMode(mode);
   }
 
-  public void blendMode(int mode) {
+  protected void blendMode(int mode) {
     plane.blendMode(mode);
   }
+
+  protected void text(String text, float x, float y) {
+    plane.text(text, x, y);
+  }
+
+  protected void textFont(PFont font) {
+    plane.textFont(font);
+  }
+
+  protected void textAlign(int horizontal, int vertical) {
+    plane.textAlign(horizontal, vertical);
+  }
+
+  protected void textLeading(float leading) {
+    plane.textLeading(leading);
+  }
+
+  protected void textMode(int mode) {
+    plane.textMode(mode);
+  }
+
+  protected void textSize(float size) {
+    plane.textSize(size);
+  }
+
+  protected float textWidth(String text) {
+    return plane.textWidth(text);
+  }
+
+  protected float textWidth(char text) {
+    return plane.textWidth(text);
+  }
+
+  protected float textAscent() {
+    return plane.textAscent();
+  }
+
+  protected float textDescent() {
+    return plane.textDescent();
+  }
+
+  /*
+   public void applyMatrix() {
+   
+   plane.appl
+   popMatrix
+   printMatrix
+   pushMatrix
+   resetMatrix
+   rotate
+   scale
+   shearX
+   shearY
+   translate
+   */
 }
 
-class SmallQuad {
+public class SmallQuad {
   /* This class stores the coordinates and UV coordinates of a grid unit of a Plane depending on the resolution.
    It's a wrapper without functions for convenience. */
 
-  PVector e, f, g, h;
-  float uLow, uHigh, vLow, vHigh;
+  public PVector e, f, g, h;
+  public float uLow, uHigh, vLow, vHigh;
 
-  SmallQuad(PVector eIn, PVector fIn, PVector gIn, PVector hIn, float uLowIn, float uHighIn, float vLowIn, float vHighIn) {
+  public SmallQuad(PVector eIn, PVector fIn, PVector gIn, PVector hIn, float uLowIn, float uHighIn, float vLowIn, float vHighIn) {
     e = eIn;
     f = fIn;
     g = gIn;
