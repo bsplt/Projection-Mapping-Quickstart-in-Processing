@@ -46,6 +46,9 @@
  * - Be aware that the width and height values (of your projection) change depeneding
  *   on the transformation so write your code accordingly (ie. adpatively).
  *   If you don't want it to change, use the size() command with fixed values.
+ *
+ * Note:
+ *   Don't forget to put your projector keystone to zero before you calibrate the sketch.
  */
 
 
