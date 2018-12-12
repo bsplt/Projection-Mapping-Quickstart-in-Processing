@@ -1,18 +1,17 @@
 // TODO:
-// Solo mode
 // Clean up
 // Write documentation
+// data loading
 
 void setup() {
   fullScreen(P2D, 2);
-  
+
   // Invoke your projection here:
-  
-  new ProjectionExample().calibrate("1");
+
+  new ProjectionExample().calibrate("x");
 }
 
 void draw() {
-  clear(); // ?
 }
 
 
@@ -25,8 +24,10 @@ class ProjectionExample extends Projection {
 
   void draw() {
     clear();
-    noStroke();
-    fill(#FFFFFF);
-    ellipse(width * 0.5, height * 0.5, height * 0.2, height * 0.2);
+    stroke(#FFFFFF);
+    for (int i = 0; i < 10; i++) {
+      float x = (width / 10.0 * i + width / 1000.0 * frameCount) % width;
+      line(x, 0, x, height);
+    }
   }
 }

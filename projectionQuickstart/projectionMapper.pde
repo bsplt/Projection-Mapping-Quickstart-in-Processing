@@ -56,9 +56,11 @@ import java.util.*;
 
 public abstract class Projection extends ProcessingFunctionality { 
   PVector[] planePoints;
+  PVector soloButton;
   ArrayList<SmallQuad> smallQuads;
   boolean sizeChanged, hasSetup;
   String id;
+  PApplet p;
 
   public Projection() {
     projectionManager.addProjection(this);
@@ -70,7 +72,7 @@ public abstract class Projection extends ProcessingFunctionality {
     smallQuads = new ArrayList();
     id = "unnamed";
     sizeChanged = true;
-    PApplet p = projectionManager.parent;
+    p = projectionManager.parent;
 
     planePoints = new PVector[] {
       new PVector(p.width * 0.3333, p.height * 0.3333), 
@@ -126,11 +128,19 @@ public abstract class Projection extends ProcessingFunctionality {
       ratio = max(ratio, 0.1);
       ratio = min(ratio, 10.0);
 
-      width = round(ratio > 1.0 ? maxDistance * ratio : maxDistance); 
-      height = round(ratio > 1.0 ? maxDistance : maxDistance / ratio);
+      if (ratio > 1.0) {
+        width = ceil(maxDistance);
+        height = round(width / ratio);
+      } else {
+        height = ceil(maxDistance);
+        width = round(height * ratio);
+      }
+
       plane = createGraphics(width, height);
 
-      println("Set projection \"" + id + "\" to a ratio of 1:" + ratio + " with the dimensions of " + width + " by " + height + ".");
+      soloButton = getLineIntersection(new PVector[] {planePoints[0], planePoints[2], planePoints[1], planePoints[3]});
+
+      println("Set projection \"" + id + "\" to a ratio of " + ratio + ":1 with the dimensions of " + width + " by " + height + ".");
 
       sizeChanged = false;
       hasSetup = false;
@@ -147,17 +157,17 @@ public abstract class Projection extends ProcessingFunctionality {
   }
 
   public void applyProjection() {
-    noStroke();
-    beginShape(QUAD);
-    textureMode(NORMAL);
-    texture(plane);
+    p.noStroke();
+    p.beginShape(QUAD);
+    p.textureMode(NORMAL);
+    p.texture(plane);
     for (SmallQuad sq : smallQuads) {
-      vertex(sq.e.x, sq.e.y, sq.uLow, sq.vLow);
-      vertex(sq.f.x, sq.f.y, sq.uHigh, sq.vLow);
-      vertex(sq.g.x, sq.g.y, sq.uHigh, sq.vHigh);
-      vertex(sq.h.x, sq.h.y, sq.uLow, sq.vHigh);
+      p.vertex(sq.e.x, sq.e.y, sq.uLow, sq.vLow);
+      p.vertex(sq.f.x, sq.f.y, sq.uHigh, sq.vLow);
+      p.vertex(sq.g.x, sq.g.y, sq.uHigh, sq.vHigh);
+      p.vertex(sq.h.x, sq.h.y, sq.uLow, sq.vHigh);
     }
-    endShape();
+    p.endShape();
   }
 
   // ---
@@ -353,37 +363,6 @@ public abstract class Projection extends ProcessingFunctionality {
 }
 
 abstract class ProcessingFunctionality {
-
-  // ---
-
-  /* TODO:
-   shape
-   image
-   imageMode
-   tint
-   
-   bezier
-   bezierDetail
-   curve
-   curveDetail
-   curveTightness
-   
-   beginContour
-   beginShape
-   bezierVertex
-   curveVertex
-   endContour
-   endShape
-   quadraticVertex
-   vertex
-   texture
-   textureMode 
-   textureWrap
-   
-   clip
-   
-   */
-
   public PGraphics plane;
 
   protected int width, height;
@@ -397,8 +376,21 @@ abstract class ProcessingFunctionality {
   }
 
   protected void size(int width, int height) {
+    size(width, height, "default");
+  }
+
+  protected void size(String renderer) {
+    size(width, height, renderer);
+  }
+
+
+  protected void size(int width, int height, String renderer) {
     plane.endDraw();
-    plane = createGraphics(width, height);
+    if (renderer == "default") {
+      plane = createGraphics(width, height);
+    } else {
+      plane = createGraphics(width, height, renderer);
+    }
     plane.beginDraw();
     println("Dimensions changed manually to " + width + " by " + height + ".");
     this.width = width;
@@ -463,7 +455,7 @@ abstract class ProcessingFunctionality {
     plane.colorMode(mode);
   }
 
-   void noStroke() {
+  void noStroke() {
     plane.noStroke();
   }
 
@@ -475,8 +467,40 @@ abstract class ProcessingFunctionality {
     plane.fill(col);
   }
 
+  protected void fill(float col, float transparency) {
+    plane.fill(col, transparency);
+  }
+
+  protected void fill(color col, float transparency) {
+    plane.fill(col, transparency);
+  }
+
+  protected void fill(float a, float b, float c) {
+    plane.fill(a, b, c);
+  }
+
+  protected void fill(float a, float b, float c, float d) {
+    plane.fill(a, b, c, d);
+  }
+
   protected void stroke(color col) {
     plane.stroke(col);
+  }
+
+  protected void stroke(float col, float transparency) {
+    plane.stroke(col, transparency);
+  }
+
+  protected void stroke(color col, float transparency) {
+    plane.stroke(col, transparency);
+  }
+
+  protected void stroke(float a, float b, float c) {
+    plane.stroke(a, b, c);
+  }
+
+  protected void stroke(float a, float b, float c, float d) {
+    plane.stroke(a, b, c, d);
   }
 
   protected void strokeWeight(int thickness) {
@@ -543,19 +567,206 @@ abstract class ProcessingFunctionality {
     return plane.textDescent();
   }
 
-  /*
-   public void applyMatrix() {
+  public void applyMatrix(float a, float b, float c, float d, float e, float f) {
+    plane.applyMatrix(a, b, c, d, e, f);
+  }
+
+  public void applyMatrix(PMatrix matrix) {
+    plane.applyMatrix(matrix);
+  }
+
+  public void applyMatrix(PMatrix2D matrix) {
+    plane.applyMatrix(matrix);
+  }
+
+  public void applyMatrix(PMatrix3D matrix) {
+    plane.applyMatrix(matrix);
+  }
+
+  public void applyMatrix(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l, float m, float n, float o, float p) {
+    plane.applyMatrix(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+  }
+
+  protected void pushMatrix() {
+    plane.pushMatrix();
+  }
+
+  protected void popMatrix() {
+    plane.popMatrix();
+  }
+
+  protected void printMatrix() {
+    plane.printMatrix();
+  }
+
+  protected void resetMatrix() {
+    plane.resetMatrix();
+  }
+
+  protected void rotate(float angle) {
+    plane.rotate(angle);
+  }
+
+  protected void scale(float scale) {
+    plane.scale(scale);
+  }
+
+  protected void shearX(float amount) {
+    plane.shearX(amount);
+  }
+
+  protected void shearY(float amount) {
+    plane.shearY(amount);
+  }
+
+  protected void translate(float x, float y) {
+    plane.translate(x, y);
+  }
+
+  protected void translate(float x, float y, float z) {
+    plane.translate(x, y, z);
+  }
+
+  protected void shape(PShape shape, float x, float y) {
+    plane.shape(shape, x, y);
+  }
+
+  protected void shape(PShape shape, float x, float y, float w, float h) {
+    plane.shape(shape, x, y, w, h);
+  }
+
+  protected void shapeMode(int mode) {
+    plane.shapeMode(mode);
+  }
+
+  protected void image(PImage image, float x, float y) {
+    plane.image(image, x, y);
+  }
+
+  protected void image(PImage image, float x, float y, float w, float h) {
+    plane.image(image, x, y, w, h);
+  }
+
+  protected void imageMode(int mode) {
+    plane.imageMode(mode);
+  }
+
+  protected void tint(color col) {
+    plane.tint(col);
+  }
+
+  protected void tint(color col, float transparency) {
+    plane.tint(col, transparency);
+  }
+
+  protected void tint(float gray) {
+    plane.tint(gray);
+  }
+
+  protected void tint(float gray, float transparency) {
+    plane.tint(gray, transparency);
+  }
+
+  protected void tint(float a, float b, float c) {
+    plane.tint(a, b, c);
+  }
+
+  protected void tint(float a, float b, float c, float d) {
+    plane.tint(a, b, c, d);
+  }
+
+  protected void noTint() {
+    plane.noTint();
+  }
+
+  protected void bezier(float a, float b, float c, float d, float e, float f, float g, float h) {
+    plane.bezier(a, b, c, d, e, f, g, h);
+  }
+
+  protected void bezier(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l) {
+    plane.bezier(a, b, c, d, e, f, g, h, i, j, k, l);
+  }
+
+  protected void bezierDetail(int detail) {
+    plane.bezierDetail(detail);
+  }
+
+  protected void curve(float a, float b, float c, float d, float e, float f, float g, float h) {
+    plane.curve(a, b, c, d, e, f, g, h);
+  }
+
+  protected void curve(float a, float b, float c, float d, float e, float f, float g, float h, float i, float j, float k, float l) {
+    plane.curve(a, b, c, d, e, f, g, h, i, j, k, l);
+  }
+
+  protected void curveDetail(int detail) {
+    plane.curveDetail(detail);
+  }
+
+  protected void beginContour() {
+    plane.beginContour();
+  }
+
+  protected void endContour() {
+    plane.endContour();
+  }
+
+  protected void beginShape() {
+    plane.beginShape();
+  }
+
+  protected void beginShape(int mode) {
+    plane.beginShape(mode);
+  }
+
+  protected void endShape() {
+    plane.endShape();
+  }
+
+  protected void endShape(int mode) {
+    plane.endShape(mode);
+  }
+
+  protected void vertex(float x, float y) {
+    plane.vertex(x, y);
+  }
+
+  protected void vertex(float x, float y, float z) {
+    plane.vertex(x, y, z);
+  }
+
+  protected void vertex(float x, float y, float u, float v) {
+    plane.vertex(x, y, u, v);
+  }
+
+  protected void vertex(float x, float y, float z, float u, float v) {
+    plane.vertex(x, y, z, u, v);
+  }
+
+  protected void vertex(float[] values) {
+    plane.vertex(values);
+  }
+
+
+  /* TODO:
    
-   plane.appl
-   popMatrix
-   printMatrix
-   pushMatrix
-   resetMatrix
-   rotate
-   scale
-   shearX
-   shearY
-   translate
+   curveTightness
+   
+   
+   bezierVertex
+   curveVertex
+   quadraticVertex
+   texture
+   textureMode 
+   textureWrap
+   
+   clip
+   noClip
+   
+   smooth(level)
+   noSmooth
+   
+   3D
    */
 }
 
@@ -580,6 +791,7 @@ public class SmallQuad {
 
 public class ProjectionManager {
   private ArrayList<Projection> projections;
+  private Projection soloModeProjection;
 
   private int lastMouseCheck, lastMouseActive, mouseTravel;
   private boolean calibrating, pmousePressed, changedSomething;
@@ -621,13 +833,38 @@ public class ProjectionManager {
   private void showProjections() {
     noStroke();
 
-    for (Projection projection : projections) {
-      projection.setReady();
-      projection.setupOnce();
-      projection.draw();
-      projection.setFinished();
-      projection.applyProjection();
+    if (soloModeProjection != null) {
+      showProjectionRoutine(soloModeProjection);
+    } else {
+      for (Projection projection : projections) {
+        showProjectionRoutine(projection);
+      }
     }
+  }
+
+  void showProjectionRoutine(Projection projection) {
+    projection.setReady();
+    projection.setupOnce();
+    projection.draw();
+    projection.setFinished();
+    projection.applyProjection();
+  }
+
+  private void showCalibrationGraphics(Projection projection, float size) {
+    beginShape(QUAD);
+    for (PVector corner : projection.planePoints) {
+      vertex(corner.x, corner.y);
+    }
+    endShape(CLOSE);
+
+    for (PVector corner : projection.planePoints) {
+      ellipse(corner.x, corner.y, size * 2, size * 2);
+    }
+
+    if (soloModeProjection != null) {
+      fill(255, map(sin(millis() * 0.003), -1, 1, 0, 255));
+    }
+    ellipse(projection.soloButton.x, projection.soloButton.y, size * 3, size * 3);
   }
 
   private void calibrate() {
@@ -658,20 +895,20 @@ public class ProjectionManager {
       }
     }
 
-    if (calibrating) {      
+    if (calibrating) {
+      noStroke();
+      fill(#000000, 196);
+      rect(0, 0, width, height);
+
       noFill();
       stroke(#FFFFFF);
       strokeWeight(1);
 
-      for (Projection projection : projections) {
-        beginShape(QUAD);
-        for (PVector corner : projection.planePoints) {
-          vertex(corner.x, corner.y);
-        }
-        endShape(CLOSE);
-
-        for (PVector corner : projection.planePoints) {
-          ellipse(corner.x, corner.y, size * 2, size * 2);
+      if (soloModeProjection != null) {
+        showCalibrationGraphics(soloModeProjection, size);
+      } else {
+        for (Projection projection : projections) {
+          showCalibrationGraphics(projection, size);
         }
       }
 
@@ -685,10 +922,30 @@ public class ProjectionManager {
         for (Projection projection : projections) {
           for (PVector corner : projection.planePoints) {
             if (dist(mouseX, mouseY, corner.x, corner.y) < size) {
+
+              if (soloModeProjection != null) {
+                if (soloModeProjection != projection) {
+                  continue;
+                }
+              }
+
               calibrationPoint = corner;
               mouseClickOffset = PVector.sub(calibrationPoint, mouseClickPoint);
               changedSomething = true;
               changedProjection = projection;
+              break;
+            }
+          }
+        }
+
+        if (!changedSomething) {
+          for (Projection projection : projections) {
+            if (dist(mouseX, mouseY, projection.soloButton.x, projection.soloButton.y) < size * 1.5) {
+              if (soloModeProjection == null) {
+                soloModeProjection = projection;
+              } else {
+                soloModeProjection = null;
+              }
               break;
             }
           }
