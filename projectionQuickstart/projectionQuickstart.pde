@@ -1,6 +1,4 @@
-// TODO:
-// Clean up
-// Write documentation
+// This is an example to quickstart your project.
 
 void setup() {
   fullScreen(P2D, 2);
