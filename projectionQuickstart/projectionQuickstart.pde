@@ -1,7 +1,6 @@
 // TODO:
 // Clean up
 // Write documentation
-// data loading
 
 void setup() {
   fullScreen(P2D, 2);
@@ -25,6 +24,7 @@ class ProjectionExample extends Projection {
   void draw() {
     clear();
     stroke(#FFFFFF);
+    strokeWeight(2);
     for (int i = 0; i < 10; i++) {
       float x = (width / 10.0 * i + width / 1000.0 * frameCount) % width;
       line(x, 0, x, height);

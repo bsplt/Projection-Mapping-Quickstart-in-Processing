@@ -42,13 +42,18 @@
  * - When you move the mouse you enter calibration mode.
  *   Drag the corners to the desired position in the projection.
  *   The transformation will be saved automatically.
+ *   The circle in the mid of the corners acts as a solo button.
+ *   Only one projection will be shown, if you click it, which might help to calibrate.
  * - The calibration file is saved as a CSV in the data folder of the sketch.
  * - Be aware that the width and height values (of your projection) change depeneding
  *   on the transformation so write your code accordingly (ie. adpatively).
  *   If you don't want it to change, use the size() command with fixed values.
  *
  * Note:
- *   Don't forget to put your projector keystone to zero before you calibrate the sketch.
+ * - Don't forget to put your projector keystone to zero before you calibrate the sketch.
+ * - The algorithm of the ratio detection does not always work great. Sometimes you just
+ *   have to pull a little bit on the corners and it will find the right value.
+ *   If you cannot fix it, then use the size() method to manually set the right values.
  */
 
 
