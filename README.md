@@ -1,5 +1,7 @@
 # Projection Mapping Quickstart in Processing
 
+**Transform you Processing code easily and instantly into a mapped projection.**
+
 ## Documentation
 
 More soon.
@@ -10,7 +12,7 @@ Projection Mapping can require a non-linear work flow, if you want your projecti
 
 If you are in need of a library or just pieces of code, that will help you to instantly have results with your non-linear projection idea, this Processing sketch will be the right for you because I try to solve these problems.
 
-My intention behind this project is to enable people (like my students), who are just learning their first lines of code, to instantly transfer their Processing sketches to a perfect projection mapping. The goal is simplicity, not limitation, so more advanced users might want to take a look too. This code will dramatically speed up your progress.
+My intention behind this project is to enable people (like my students), who are just learning their first lines of code, to instantly transfer their Processing sketches to a perfect projection mapping. The goal is simplicity, not limitation. More advanced users might want to take a look too. This code will dramatically speed up your progress.
 
 You might be surprised how easy it is.
 
@@ -97,7 +99,11 @@ I pasted my sketch into the scope of a class called `ProjectionExample`. Inside 
 
 This is the work flow you need to do to test your sketch as a mapped projection.
 
-Please note that you should write you code adaptively to the screen size. As an example, this means you should write `float x = width / 10.0;` instead of `float x = 100.0;` because it will adapt to the changing size of the sketch when you distort with Projection Mapper.
+### Adaptive Layout
+
+Please note that you should write you code adaptively to the screen size. Because the width and height parameters of your sketch change dynamically, you should use them to to determine positions and dimensions.
+
+As an example, this means you should write `float x = width / 10.0;` instead of `float x = 100.0;`.
 
 ### More advanced knowledge
 
@@ -123,6 +129,8 @@ Please note, that you still need to call the `draw()` method as above, even thou
 
 More soon.
 
-## Further
+## Future Development
 
-More soon.
+As soon as I have finished development, I will only continue implementing features by request. So if you have ideas, found bugs or need a feature, feel free to contact me.
+
+Sames applies for the documentation. If questions remain unanswered for you, please reach out and write for example an issue. I am happy to help.
