@@ -405,6 +405,10 @@ abstract class ProcessingFunctionality {
   protected void background(color col) {
     plane.background(col);
   }
+  
+  protected void background(float a, float b, float c) {
+    plane.background(a, b, c);
+  }
 
   protected void clear() {
     plane.clear();
@@ -471,6 +475,10 @@ abstract class ProcessingFunctionality {
   protected void fill(color col) {
     plane.fill(col);
   }
+  
+  protected void fill(float col) {
+    plane.fill(col);
+  }
 
   protected void fill(float col, float transparency) {
     plane.fill(col, transparency);
@@ -508,7 +516,7 @@ abstract class ProcessingFunctionality {
     plane.stroke(a, b, c, d);
   }
 
-  protected void strokeWeight(int thickness) {
+  protected void strokeWeight(float thickness) {
     plane.strokeWeight(thickness);
   }
 
@@ -534,6 +542,10 @@ abstract class ProcessingFunctionality {
 
   protected void text(String text, float x, float y) {
     plane.text(text, x, y);
+  }
+  
+  protected void text(char character, float x, float y) {
+    plane.text(str(character), x, y);
   }
 
   protected void textFont(PFont font) {
