@@ -4,7 +4,7 @@
 
 ## Documentation
 
-More soon.
+Will come in the future.
 
 ## Introduction
 
